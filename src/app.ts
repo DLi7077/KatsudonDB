@@ -1,12 +1,14 @@
 import express from "express";
-const app = express();
-const port = 5000;
-const database = require("./database");
+import routes from "./routes";
+import bodyParser from "body-parser";
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+const app = express();
+app.use(bodyParser.json());
+const port = 5000;
 
 app.listen(port, () => {
   return console.log(`Express is listening at http://localhost:${port}`);
 });
+
+routes(app);
+

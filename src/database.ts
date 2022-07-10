@@ -1,16 +1,19 @@
+import * as dotenv from "dotenv";
+dotenv.config();
+
 const { Client } = require("pg");
-const client = new Client({
-  user: "postgres",
-  password: "Devin12?",
+const database = new Client({
+  user: process.env.USER,
+  password: process.env.PASSWORD,
   host: "localhost",
   port: 5432,
-  database: "2D-Slaves",
+  database: process.env.DATABASE,
 });
 
-client.connect().then(() => {
+database.connect().then(() => {
   console.log("Connected to 2D-Slaves Database!");
 });
 
-client.query("select * from Users");
+database.query("select * from users");
 
-module.exports = Client;
+module.exports = database;
