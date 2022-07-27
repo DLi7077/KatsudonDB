@@ -11,5 +11,6 @@ app.listen(port, () => {
 });
 //console.log(rebase2)
 
+console.log('lmao')
 routes(app);
 
