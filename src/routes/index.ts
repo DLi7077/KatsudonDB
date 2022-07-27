@@ -4,6 +4,8 @@ import db from "./db";
 export default async function routes(app: Express) {
   app.use("/api", db);
 
-  const listEndpoints = require("express-list-endpoints"); // npm i express-list-endpoints
-  console.log(listEndpoints(app));
+  // show all endpoints
+  // npm i express-list-endpoints
+  const listEndpoints = require("express-list-endpoints");
+  console.table(listEndpoints(app));
 }

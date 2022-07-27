@@ -73,6 +73,11 @@ async function addMessage(message: any): Promise<any> {
   );
 }
 
+async function getAllMessages(): Promise<any> {
+  return await database.query(`Select * from messages;`);
+}
+
 export default {
   addMessage,
+  getAllMessages,
 };

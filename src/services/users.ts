@@ -7,7 +7,8 @@ const database = require("../database");
  * @returns
  */
 async function addUser(userId: string): Promise<any> {
-  return await database.query(`INSERT into users (id) 
+  return await database.query(`
+    INSERT into users (id) 
     values ('${userId}')
     ON CONLFICT DO NOTHING
     ;`);
@@ -16,7 +17,8 @@ async function addUser(userId: string): Promise<any> {
 async function findUsers() {
   return await database.query("select * from users");
 }
+
 export default {
   addUser,
-  findUsers,
+  findUsers, 
 };
