@@ -26,7 +26,11 @@ export async function addUser(req: Request, res: Response): Promise<void> {
  */
 export async function findUsers(req: Request, res: Response) {
   await database.query("select * from users").then((users) => {
-    res.json({ user_ids: users.rows });
+    res.json({
+      status: 200,
+      count: users.rowCount,
+      user_ids: users.rows,
+    });
   });
 }
 
@@ -42,6 +46,7 @@ export async function addMessage(req: Request, res: Response): Promise<void> {
     .then((message) => {
       res.json({
         status: 200,
+        count: message.rows.length,
         note: "message added!",
         message: message.rows,
       });
@@ -59,6 +64,7 @@ export async function findMessages(req: Request, res: Response): Promise<any> {
   messageService.getAllMessages().then((msg) => {
     res.json({
       status: 200,
+      count: msg.rowCount,
       note: "successful query!",
       message: msg.rows,
     });
