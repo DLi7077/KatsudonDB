@@ -1,8 +1,8 @@
 import _ from "lodash";
 import async, { AsyncResultCallback } from "async";
 import * as dotenv from "dotenv";
-import axios from "axios";
 import getTimestampHour from "./Timestamp";
+import discordService from "../services/discord";
 dotenv.config();
 
 /**
@@ -10,7 +10,7 @@ dotenv.config();
  * @param {any []} mentioned_users a list of mentioned user_ids
  * @returns {Promise<any>} An object mapping each mentioned username to a frequency
  */
- async function getMentionedUserDistribution(
+async function getMentionedUserDistribution(
   mentioned_users: any[]
 ): Promise<any> {
   const mention_distribution = {};
@@ -26,24 +26,12 @@ dotenv.config();
     if (existing_username) {
       mention_distribution[existing_username] += 1;
     } else {
-      const request = {
-        method: "get",
-        url: `https://discord.com/api/users/${mentioned_user_id}`,
-        headers: {
-          Authorization: `Bot ${process.env.TOKEN}`,
-        },
-      };
-
-      await axios(request)
-        .then((res) => {
-          const fetched_username = _.get(res, "data.username");
-          usernameMap.set(mentioned_user_id, fetched_username);
-          //increment count of current user
-          _.assign(mention_distribution, {
-            [fetched_username]: 1,
-          });
-        })
-        .catch(console.error);
+      const fetched_username = await discordService.getUsernameById(
+        mentioned_user_id
+      );
+      //update map and initialize user count
+      usernameMap.set(mentioned_user_id, fetched_username);
+      mention_distribution[fetched_username] = 1;
     }
     return next(null, {});
   };
@@ -77,7 +65,7 @@ function getTimeDistribution(time_list: any[]): number[] {
  * @param {string []} message_list a list of messages
  * @returns {any} word distribution object
  */
- function getWordDistribution(message_list: string[]): any {
+function getWordDistribution(message_list: string[]): any {
   const word_distribution = _.reduce(
     message_list,
     (accumulator: any, message: string) => {
