@@ -9,7 +9,7 @@ import {
 
 const router = express.Router();
 
-router.get("/find-users", findUsers);
+router.get("/all-users", findUsers);
 router.get("/all-messages", findMessages);
 router.get("/user-stats", getUserStatistics);
 

@@ -6,7 +6,7 @@ import _ from "lodash";
  * @param {string} timestamp in the form of a string
  * @returns {number}the hour the message was sent [0,24]
  */
-export default function timestampHour(timestamp: string): number {
+export default function getTimestampHour(timestamp: string): number {
   const [weekday, day, month, year, time] = _.split(timestamp, " ");
   const [hour] = _.split(time, ":");
   return parseInt(hour);

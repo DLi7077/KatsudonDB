@@ -42,13 +42,13 @@ const build_database_if_needed: string = `
     message_id VARCHAR(20) REFERENCES Messages(id),
     group_id VARCHAR(20) REFERENCES Groups(id)
   );`;
+
 (async () => {
   await database.connect();
   try {
-    const build_tables = await database.query(build_database_if_needed);
+    await database.query(build_database_if_needed);
     console.log("Connected to 2D-Slaves Database!");
-    console.log(build_tables);
-  } catch (err) {
+  } catch (err: any) {
     console.error("error building :", err);
   }
 })();

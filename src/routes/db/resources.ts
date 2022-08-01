@@ -61,7 +61,7 @@ export async function addMessage(req: Request, res: Response): Promise<void> {
  * @returns {Promise<any>} Returns a response
  */
 export async function findMessages(req: Request, res: Response): Promise<any> {
-  messageService.getAllMessages().then((msg) => {
+  messageService.getAllMessages(req.query).then((msg) => {
     res.json({
       status: 200,
       count: msg.rowCount,
@@ -81,11 +81,11 @@ export async function getUserStatistics(
   req: Request,
   res: Response
 ): Promise<any> {
-  discordService.getUserStatistics(req.query).then((msg: any) => {
+  discordService.getUserStatistics(req.query).then((result: any) => {
     res.json({
       status: 200,
       note: "successful query!",
-      word_distribution: msg,
+      ...result,
     });
   });
 }
