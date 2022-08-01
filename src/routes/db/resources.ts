@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import userService from "../../services/users";
 import messageService from "../../services/messages";
-import discordService from "../../services/discord";
+import statService from "../../services/statistics";
 
 const database = require("../../database");
 
@@ -24,8 +24,8 @@ export async function addUser(req: Request, res: Response): Promise<void> {
  * @param {Response} res HTTP response object
  * @returns {Promise<any>} Returns a response
  */
-export async function findUsers(req: Request, res: Response) {
-  await database.query("select * from users").then((users) => {
+export async function findUsers(req: Request, res: Response): Promise<any> {
+  await database.query("select * from users").then((users: any) => {
     res.json({
       status: 200,
       count: users.rowCount,
@@ -81,7 +81,7 @@ export async function getUserStatistics(
   req: Request,
   res: Response
 ): Promise<any> {
-  discordService.getUserStatistics(req.query).then((result: any) => {
+  statService.getUserStatistics(req.query).then((result: any) => {
     res.json({
       status: 200,
       note: "successful query!",
