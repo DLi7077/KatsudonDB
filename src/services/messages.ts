@@ -11,8 +11,9 @@ const database = require("../database");
  */
 async function addMessage(message: any): Promise<any> {
   const message_id = _.get(message, "id");
-  const { user_id, channel_id, message_content } = message;
-  const attachment_size: number = _.get(message, "attachment_size") ?? 0;
+  const { user_id, channel_id } = message;
+  const message_content = _.get(message, "message_content").replace(/'/g, "''");
+  const attachment_size = _.get(message, "attachment_size") ?? 0;
   const attachment_name = _.get(message, "attachment_name") ?? null;
   const attachment_type = _.get(message, "attachment_type") ?? null;
   const mentionedUsers = _.get(message, "message_mentions.users");
@@ -66,15 +67,23 @@ async function addMessage(message: any): Promise<any> {
         mentionedUsersScript +
         mentionedGroupsScript
     )
-    .catch(console.error());
+    .catch(console.error);
 
   return await database.query(
     `select * FROM messages WHERE id = ${message_id} limit 1`
   );
 }
 
-async function getAllMessages(): Promise<any> {
-  return await database.query(`Select * from messages;`);
+/**
+ * @description Finds all messages
+ * @param {any} queryParams params that may contain user_id to filter
+ * @returns {Promise<any>}
+ */
+async function getAllMessages(queryParams: any): Promise<any> {
+  const user_id = _.get(queryParams, "user_id");
+  const user_id_query = user_id ? `Where user_id = '${user_id}'` : "";
+
+  return await database.query(`Select * from messages ${user_id_query};`);
 }
 
 export default {
