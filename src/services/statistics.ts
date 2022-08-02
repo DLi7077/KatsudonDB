@@ -1,54 +1,109 @@
 import _ from "lodash";
 import distribution from "../utils/Distribution";
+import userService from "./users";
+import messageService from "./messages";
+import tools from "../utils/tools";
 
-const database = require("../database");
-import discordService from "./discord";
+/**
+ * @description updates a word distribution set
+ * @param {any} intialDistribution - intial word distribution
+ * @param {any} wordDistribution - the additional words distribution
+ * @returns The updated word distribution
+ */
+function updatedWordDistribution(
+  intialDistribution: any,
+  wordDistribution: any
+): any {
+  const updatedDistribution = _.reduce(
+    wordDistribution,
+    (word_freq: any, freq: number, word: string) => {
+      const currentWordFrequency = _.get(word_freq, word) ?? 0;
+      _.assign(word_freq, { [word]: currentWordFrequency + freq });
+
+      return word_freq;
+    },
+    intialDistribution
+  );
+
+  return updatedDistribution;
+}
 
 /**
  * @description Computes user statistics using messages
  * @param {any} queryParams - queryParams for user_id filter
  * @returns {Promise<any>} a collection of mentions, time, and word distribution
  */
-async function getUserStatistics(queryParams: any): Promise<any> {
+async function userStats(queryParams: any): Promise<any> {
   const user_id = _.get(queryParams, "user_id");
-  const current_username = user_id
-    ? await discordService.getUsernameById(user_id)
-    : "";
-  const user_id_query = user_id ? `Where user_id = '${user_id}'` : "";
-  const messageBlocks = await database
-    .query(`Select * from messages ${user_id_query}`)
-    .then((res: any) => res.rows);
-  const mentioned_users = await database
-    .query(
-      `select m.user_id as speaker, u.user_id as mentioned from  messages m right join mentioned_users u on m.id = u.message_id
-    ${user_id ? `where m.user_id ='${user_id}'` : ""}`
-    )
-    .then((res: any) => res.rows);
+  //construct user data object
+  const user_data: any = await userService
+    .findUsers(user_id ? { user_id: user_id } : {})
+    .then((res: any) => {
+      return _.reduce(
+        res.rows,
+        (accumulator: any, user: any) => {
+          const user_id = _.get(user, "id");
+          //the intial state of user data object
+          return _.assign(accumulator, {
+            [user_id]: {
+              count: 0,
+              word_distribution: {},
+              time_distribution: new Array(24).fill(0),
+              attachments: {
+                none: 0,
+                attachment_sizes: [],
+              },
+            },
+          });
+        },
+        {}
+      );
+    })
+    .catch(() => console.log("error getting user(s)"));
 
-  const message_count = messageBlocks.length;
-  const messages = _.map(messageBlocks, (msg) => {
-    return _.get(msg, "message_content");
-  });
-  const timestamps = _.map(messageBlocks, (msg) => {
-    return _.get(msg, "date");
-  });
+  const { count, messages } = await messageService
+    .getAllMessages(user_id ? { user_id: user_id } : {})
+    .catch(() => {
+      console.error("error retreiving messages");
+    });
 
-  //translate user_id to username using discord api
-  const mention_distribution = await distribution.getMentionedUserDistribution(
-    mentioned_users
+  const user_data_object = _.reduce(
+    messages,
+    (accumulator: any, message: any) => {
+      const { user_id, message_content, attachment_size, date } = message;
+      const sentenceWords: any =
+        distribution.getWordDistribution(message_content);
+      const message_hour: number = tools.getTimestampHour(date);
+      const attachment_size_int = parseInt(attachment_size);
+      const currentUserData = accumulator[user_id];
+      //update count
+      currentUserData.count += 1;
+
+      //update word distribution
+      currentUserData.word_distribution = updatedWordDistribution(
+        currentUserData.word_distribution,
+        sentenceWords
+      );
+
+      //update time distribution
+      currentUserData.time_distribution[message_hour] += 1;
+
+      //update attachment_size distribution
+      if (attachment_size_int) {
+        currentUserData.attachments.attachment_sizes.push(attachment_size_int);
+      } else {
+        currentUserData.attachments.none += 1;
+      }
+
+      return accumulator;
+    },
+    user_data
   );
-  const time_distribution = distribution.getTimeDistribution(timestamps);
-  const word_distribution = distribution.getWordDistribution(messages);
+  
 
-  return {
-    username: current_username ?? "",
-    count: message_count,
-    mention_distribution: mention_distribution,
-    time_distribution: time_distribution,
-    word_distribution: word_distribution,
-  };
+  return { message_count: count, users: user_data_object };
 }
 
 export default {
-  getUserStatistics,
+  userStats,
 };

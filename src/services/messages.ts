@@ -59,7 +59,7 @@ async function addMessage(message: any): Promise<any> {
   const mentionedUsersScript = _.join(linkMentionedUsers, "");
   const mentionedGroupsScript = _.join(linkMentionedGroups, "");
 
-  await database
+  return await database
     .query(
       addUser +
         addChannel +
@@ -67,11 +67,14 @@ async function addMessage(message: any): Promise<any> {
         mentionedUsersScript +
         mentionedGroupsScript
     )
-    .catch(console.error);
-
-  return await database.query(
-    `select * FROM messages WHERE id = ${message_id} limit 1`
-  );
+    .catch(() => {
+      console.log("error adding message");
+    })
+    .then(async () => {
+      await database.query(
+        `select * FROM messages WHERE id = ${message_id} limit 1`
+      );
+    });
 }
 
 /**
@@ -83,7 +86,14 @@ async function getAllMessages(queryParams: any): Promise<any> {
   const user_id = _.get(queryParams, "user_id");
   const user_id_query = user_id ? `Where user_id = '${user_id}'` : "";
 
-  return await database.query(`Select * from messages ${user_id_query};`);
+  return await database
+    .query(`Select * from messages ${user_id_query};`)
+    .then((res: any) => {
+      return {
+        count: res.rowCount,
+        messages: res.rows,
+      };
+    });
 }
 
 export default {
