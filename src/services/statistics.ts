@@ -14,18 +14,19 @@ function updatedWordDistribution(
   intialDistribution: any,
   wordDistribution: any
 ): any {
+  let word_count = 0;
   const updatedDistribution = _.reduce(
     wordDistribution,
     (word_freq: any, freq: number, word: string) => {
       const currentWordFrequency = _.get(word_freq, word) ?? 0;
-      _.assign(word_freq, { [word]: currentWordFrequency + freq });
-
+      _.assign(word_freq, { [word]: currentWordFrequency + (freq ?? 0) });
+      word_count += freq;
       return word_freq;
     },
     intialDistribution
   );
 
-  return updatedDistribution;
+  return [word_count, updatedDistribution];
 }
 
 /**
@@ -46,8 +47,9 @@ async function userStats(queryParams: any): Promise<any> {
           //the intial state of user data object
           return _.assign(accumulator, {
             [user_id]: {
-              count: 0,
+              message_count: 0,
               word_distribution: {},
+              word_count: 0,
               time_distribution: new Array(24).fill(0),
               attachments: {
                 none: 0,
@@ -59,13 +61,14 @@ async function userStats(queryParams: any): Promise<any> {
         {}
       );
     })
-    .catch(() => console.log("error getting user(s)"));
+    .catch(console.error);
 
-  const { count, messages } = await messageService
+  const response = await messageService
     .getAllMessages(user_id ? { user_id: user_id } : {})
-    .catch(() => {
-      console.error("error retreiving messages");
-    });
+    .catch(console.error);
+
+  const count = _.get(response, "count");
+  const messages = _.get(response, "messages");
 
   const user_data_object = _.reduce(
     messages,
@@ -76,14 +79,21 @@ async function userStats(queryParams: any): Promise<any> {
       const message_hour: number = tools.getTimestampHour(date);
       const attachment_size_int = parseInt(attachment_size);
       const currentUserData = accumulator[user_id];
-      //update count
-      currentUserData.count += 1;
+      //update message count
+      currentUserData.message_count += 1;
 
       //update word distribution
-      currentUserData.word_distribution = updatedWordDistribution(
+      const [word_count, updated_word_distribution] = updatedWordDistribution(
         currentUserData.word_distribution,
         sentenceWords
       );
+      currentUserData.word_distribution = updated_word_distribution;
+
+      //update word_count
+      currentUserData.word_count += word_count;
+      if (!word_count) {
+        console.log(word_count, message);
+      }
 
       //update time distribution
       currentUserData.time_distribution[message_hour] += 1;
@@ -99,7 +109,6 @@ async function userStats(queryParams: any): Promise<any> {
     },
     user_data
   );
-  
 
   return { message_count: count, users: user_data_object };
 }
