@@ -93,7 +93,8 @@ async function getAllMessages(queryParams: any): Promise<any> {
         count: res.rowCount,
         messages: res.rows,
       };
-    });
+    })
+    .catch(console.error);
 }
 
 export default {
